@@ -1,6 +1,6 @@
-# [ANY] Chat Command Silencer (1.0.0)
+# [ANY] Chat Command Silencer (1.0.1)
 
-### Command Silencer ( ! / . Chat  Silencer)
+### Command Silencer ( ! / . Space Chat Silencer)
 
 ![alt text](https://github.com/oqyh/Chat-Command-Silencer/blob/main/img/ex.png?raw=true)
 ![alt text](https://github.com/oqyh/Chat-Command-Silencer/blob/main/img/dot.png?raw=true)
@@ -11,19 +11,27 @@
 // Enable Chat Command Silencer Plugin || 1= Yes || 0= No
 cmd_slint_enable "1"
 
-// Silent Command Chat Begin With (!) || 1= Yes || 0= No
-cmd_slint_exclamation "1"
 
 // Silent Command Chat Begin With (.) || 1= Yes || 0= No
 cmd_slint_dot "0"
 
+// Silent Command Chat Begin With (!) || 1= Yes || 0= No
+cmd_slint_exclamation "0"
+
 // Silent Command Chat Begin With (/) || 1= Yes || 0= No
 cmd_slint_slash "0"
+
+// Silent Command Chat Begin With ( )  Space || 1= Yes || 0= No
+cmd_slint_space "0"
 ```
 
 
 ## .:[ Change Log ]:.
 ```
+(1.0.1)
+- Fix Bug
+- Added Space cmd_slint_space
+
 (1.0.0)
 - Initial Release
 ```
