@@ -1,4 +1,5 @@
 # [ANY] Chat Command Silencer (1.0.3)
+https://forums.alliedmods.net/showthread.php?t=342531
 
 ### Command Silencer ( ! / . ) + Force Lower Case Commands
 
