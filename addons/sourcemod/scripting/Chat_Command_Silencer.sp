@@ -1,35 +1,54 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 
-ConVar g_enable
+#define PLUGIN_VERSION	"1.0.3"
+
+ConVar g_enable;
 ConVar g_exclamation;
 ConVar g_dot;
 ConVar g_slash;
+ConVar g_admin;
+ConVar g_hAdmFlag;
+ConVar g_caps;
 
 bool g_benable = false;
+bool g_badmin = false;
 bool g_bexclamation = false;
 bool g_bdot = false;
 bool g_bslash = false;
+bool g_bcaps = false;
+
+
 
 public Plugin myinfo = 
 {
 	name = "[ANY] Chat Command Silencer",
 	author = "Gold KingZ",
-	description = "Command Silencer ( ! / . Chat  Silencer)",
-	version     = "1.0.2",
+	description = "Command Silencer ( ! / . ) + Force Lower Case Commands",
+	version     = PLUGIN_VERSION,
 	url = "https://github.com/oqyh"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	g_enable = CreateConVar("cmd_slint_enable"		     , "1", "Enable Chat Command Silencer Plugin || 1= Yes || 0= No", _, true, 0.0, true, 1.0);
-	g_exclamation = CreateConVar("cmd_slint_exclamation"		     , "0", "Silent Command Chat Begin With (!) || 1= Yes || 0= No", _, true, 0.0, true, 1.0);
-	g_dot = CreateConVar("cmd_slint_dot"		     , "0", "Silent Command Chat Begin With (.) || 1= Yes || 0= No", _, true, 0.0, true, 1.0);
-	g_slash = CreateConVar("cmd_slint_slash"		     , "0", "Silent Command Chat Begin With (/) || 1= Yes || 0= No", _, true, 0.0, true, 1.0);
+	CreateConVar("cmd_slint_version", PLUGIN_VERSION, "[ANY] Chat Command Silencer Plugin Version", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	
+	g_enable = CreateConVar("cmd_slint_enable"		     , "1", "Enable Chat Command Silencer Plugin\n1= Yes\n0= No", _, true, 0.0, true, 1.0);
+	g_admin = CreateConVar("cmd_slint_admin"		     , "0", "Make Chat Command Silencer For Admins Only\n1= Yes ( Specific Flags cmd_slint_admin_flag )\n0= No ( Everyone )", _, true, 0.0, true, 1.0);
+	g_hAdmFlag = CreateConVar("cmd_slint_admin_flag",	"abcdefghijklmnoz",	"if cmd_slint_admin 1 which flags is it");
+	g_caps = CreateConVar("cmd_slint_caps"		     , "0", "Force After Commands ( ! . / ) UPPERCASE To lowercase\n1= Yes\n0= No", _, true, 0.0, true, 1.0);
+	g_exclamation = CreateConVar("cmd_slint_exclamation"		     , "0", "Silent Command Chat Begin With (!)\n1= Yes\n0= No", _, true, 0.0, true, 1.0);
+	g_dot = CreateConVar("cmd_slint_dot"		     , "0", "Silent Command Chat Begin With (.)\n1= Yes\n0= No", _, true, 0.0, true, 1.0);
+	g_slash = CreateConVar("cmd_slint_slash"		     , "0", "Silent Command Chat Begin With (/)\n1= Yes\n0= No", _, true, 0.0, true, 1.0);
 	
 	AddCommandListener(OnSayCmd, "say");
 	AddCommandListener(OnSayCmd, "say_team");
 	
 	HookConVarChange(g_enable, OnSettingsChanged);
+	HookConVarChange(g_admin, OnSettingsChanged);
+	HookConVarChange(g_caps, OnSettingsChanged);
 	HookConVarChange(g_exclamation, OnSettingsChanged);
 	HookConVarChange(g_dot, OnSettingsChanged);
 	HookConVarChange(g_slash, OnSettingsChanged);
@@ -40,6 +59,8 @@ public OnPluginStart()
 public void OnConfigsExecuted()
 {
 	g_benable = GetConVarBool(g_enable);
+	g_badmin = GetConVarBool(g_admin);
+	g_bcaps = GetConVarBool(g_caps);
 	g_bexclamation = GetConVarBool(g_exclamation);
 	g_bdot = GetConVarBool(g_dot);
 	g_bslash = GetConVarBool(g_slash);
@@ -50,6 +71,16 @@ public int OnSettingsChanged(Handle convar, const char[] oldValue, const char[] 
 	if(convar == g_enable)
 	{
 		g_benable = g_enable.BoolValue;
+	}
+	
+	if(convar == g_admin)
+	{
+		g_badmin = g_admin.BoolValue;
+	}
+	
+	if(convar == g_caps)
+	{
+		g_bcaps = g_caps.BoolValue;
 	}
 	
 	if(convar == g_exclamation)
@@ -74,45 +105,94 @@ public Action OnSayCmd(int client, const char[] command, int argc)
 {
 	if (!g_benable || !IsValidClient(client)) return Plugin_Continue;
 
-	char sText[1024];
-	GetCmdArgString(sText, sizeof(sText));
+	char zText[1024];
+	GetCmdArgString(zText, sizeof(zText));
 
-	StripQuotes(sText);
-	TrimString(sText);
-
-	if (StrEqual(sText, " ") || !sText[0]) return Plugin_Handled;
-
-	if ((sText[0] == '/') || (sText[0] == '!') || (sText[0] == '.'))
+	StripQuotes(zText);
+	TrimString(zText);
+	
+	if (StrEqual(zText, " ") || !zText[0]) return Plugin_Handled;
+	
+	if(g_bcaps)
 	{
-		if (IsCharUpper(sText[1]))
+		if ((zText[0] == '/') || (zText[0] == '!') || (zText[0] == '.'))
 		{
-			for (int i = 0; i <= strlen(sText); ++i)
-				sText[i] = CharToLower(sText[i]);
-			FakeClientCommand(client, "say %s", sText);
-			return Plugin_Handled;
+			if (IsCharUpper(zText[1]))
+			{
+				for (int i = 0; i <= strlen(zText); ++i)
+					zText[i] = CharToLower(zText[i]);
+				FakeClientCommand(client, "say %s", zText);
+				return Plugin_Handled;
+			}
 		}
 	}
-
-	if (g_bslash)
-	{
-		if (StrContains(sText, "/", false) == 0)
-		return Plugin_Handled;
-	}
 	
-	if (g_bexclamation)
+	if(g_badmin)
 	{
-		if (StrContains(sText, "!", false) == 0)
-		return Plugin_Handled;
-	}
-	
-	if (g_bdot)
+		char zFlags[32];
+		GetConVarString(g_hAdmFlag, zFlags, sizeof(zFlags));
+		
+		if(CheckAdminFlagsByString(client, zFlags))
+		{
+			if (g_bslash)
+			{
+				if (StrContains(zText, "/", false) == 0)
+				return Plugin_Handled;
+			}
+			
+			if (g_bexclamation)
+			{
+				if (StrContains(zText, "!", false) == 0)
+				return Plugin_Handled;
+			}
+			
+			if (g_bdot)
+			{
+				if (StrContains(zText, ".", false) == 0)
+				return Plugin_Handled;
+			}
+		}
+	}else if(!g_badmin)
 	{
-		if (StrContains(sText, ".", false) == 0)
-		return Plugin_Handled;
+		if (g_bslash)
+		{
+			if (StrContains(zText, "/", false) == 0)
+			return Plugin_Handled;
+		}
+		
+		if (g_bexclamation)
+		{
+			if (StrContains(zText, "!", false) == 0)
+			return Plugin_Handled;
+		}
+		
+		if (g_bdot)
+		{
+			if (StrContains(zText, ".", false) == 0)
+			return Plugin_Handled;
+		}
 	}
 	
 	return Plugin_Continue;
 }
+
+stock bool CheckAdminFlagsByString(int client, const char[] flagString)
+{
+    AdminId admin = view_as<AdminId>(GetUserAdmin(client));
+    if (admin != INVALID_ADMIN_ID)
+    {
+        int flags = ReadFlagString(flagString);
+        for (int i = 0; i <= 20; i++)
+        {
+            if (flags & (1<<i))
+            {
+                if(GetAdminFlag(admin, view_as<AdminFlag>(i)))
+                    return true;
+              }
+          }
+    }
+    return false;
+} 
 
 stock bool IsValidClient(int client)
 {
